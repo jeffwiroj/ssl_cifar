@@ -1,0 +1,15 @@
+{
+    // Python settings
+    "python.envFile": "${workspaceFolder}/.env",
+    // Ruff formatting and linting
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true,
+            "source.fixAll": true
+        }
+    },
+    // Disable other linters to avoid conflicts
+    "python.linting.enabled": false,
+}
