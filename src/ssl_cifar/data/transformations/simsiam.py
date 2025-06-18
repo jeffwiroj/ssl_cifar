@@ -1,6 +1,5 @@
 import torch
-from ssl_cifar.data.transformations.shared import (CIFAR_MEAN, CIFAR_STD,
-                                                   DoubleAugmentation)
+from ssl_cifar.data.transformations.shared import CIFAR_MEAN, CIFAR_STD, DoubleAugmentation
 from torchvision.transforms import v2
 
 transformations = v2.Compose(

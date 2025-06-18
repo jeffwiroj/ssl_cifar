@@ -23,14 +23,15 @@ class SimSiam(nn.Module):
             nn.Linear(512, 2048),
         )
 
-    def forward(self, x1,x2):
-    
+    def forward(self, x1, x2):
         z1, z2 = self.encode(x1), self.encode(x2)
         p1, p2 = self.prediction_mlp(z1), self.prediction_mlp(z2)
 
-        loss = -(self.criterion(p1, z2.detach()).mean() + self.criterion(p2, z1.detach()).mean()) / 2
+        loss = (
+            -(self.criterion(p1, z2.detach()).mean() + self.criterion(p2, z1.detach()).mean()) / 2
+        )
 
-        return z1,loss
+        return z1, loss
 
     def encode(self, x):
         return self.proj_mlp(self.backbone(x))
