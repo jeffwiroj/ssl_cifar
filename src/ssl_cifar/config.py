@@ -198,3 +198,21 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
     )
 
     return train_config, exp_config
+
+
+def get_exp_name(train_config: TrainConfig) -> str:
+    """
+    Generate experiment name based on SSL model and backbone architecture.
+
+    Args:
+        train_config: TrainConfig object containing model configuration
+
+    Returns:
+        str: Experiment name in format "{ssl_model}_{backbone}"
+
+    Example:
+        >>> config = TrainConfig(ssl_model="simsiam", backbone="resnet18")
+        >>> get_exp_name(config)
+        'simsiam_resnet18'
+    """
+    return f"{train_config.ssl_model}_{train_config.backbone}"

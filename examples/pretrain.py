@@ -1,5 +1,6 @@
 import torch
-from ssl_cifar.config import parse_args
+import os
+from ssl_cifar.config import parse_args, get_exp_name
 from ssl_cifar.data.transformations import get_ssl_augmentations
 from ssl_cifar.data.transformations.shared import get_dataloaders
 from ssl_cifar.models.backbone import get_backbone
@@ -36,6 +37,26 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer=optimizer, T_max=len(dataloader) * tc.epochs
     )
-    train_n_val(
+    acc = train_n_val(
         ssl_model, optimizer, scheduler, dataloader, train_loader, test_loader, tc, ec, device
     )
+
+    if ec.weight_path:
+        exp_name = get_exp_name(tc)
+        checkpoint_path = os.path.join(ec.weight_path, f"{exp_name}_best.pth")
+
+        if not os.path.exists(checkpoint_path):
+            os.makedirs(ec.weight_path, exist_ok=True)
+
+            torch.save(
+                {"model_state_dict": ssl_model.state_dict(), "final_acc": acc, "config": tc},
+                checkpoint_path,
+            )
+        else:
+            existing_checkpoint = torch.load(checkpoint_path, map_location="cpu")
+            existing_accuracy = existing_checkpoint.get("final_acc", 0.0)
+
+            torch.save(
+                {"model_state_dict": ssl_model.state_dict(), "final_acc": acc, "config": tc},
+                checkpoint_path,
+            )
