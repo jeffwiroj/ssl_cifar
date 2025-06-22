@@ -80,7 +80,7 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
         "--batch-size", "-b", type=int, default=512, help="Training batch size"
     )
     train_group.add_argument(
-        "--epochs", "-e", type=int, default=400, help="Number of training epochs"
+        "--epochs", "-e", type=int, default=800, help="Number of training epochs"
     )
     train_group.add_argument(
         "--learning-rate", "-lr", type=float, default=0.06, help="Base learning rate"

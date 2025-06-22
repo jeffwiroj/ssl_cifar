@@ -1,6 +1,7 @@
-import torch
 import os
-from ssl_cifar.config import parse_args, get_exp_name
+
+import torch
+from ssl_cifar.config import get_exp_name, parse_args
 from ssl_cifar.data.transformations import get_ssl_augmentations
 from ssl_cifar.data.transformations.shared import get_dataloaders
 from ssl_cifar.models.backbone import get_backbone
@@ -29,7 +30,9 @@ if __name__ == "__main__":
     backbone = get_backbone(tc.backbone)
     ssl_model = get_ssl_model(model_name=tc.ssl_model, backbone=backbone)
     ssl_model = ssl_model.to(device)
-    ssl_model.compile()
+
+    if "cuda" in device.type:
+        ssl_model.compile()
 
     optimizer = torch.optim.SGD(
         params=ssl_model.parameters(), lr=tc.lr, weight_decay=tc.wd, momentum=0.9
@@ -39,23 +42,24 @@ if __name__ == "__main__":
     )
     acc = train_n_val(
         ssl_model, optimizer, scheduler, dataloader, train_loader, test_loader, tc, ec, device
-    )
+    ).item()
 
     if ec.weight_path:
         exp_name = get_exp_name(tc)
         checkpoint_path = os.path.join(ec.weight_path, f"{exp_name}_best.pth")
+        os.makedirs(ec.weight_path, exist_ok=True)
 
-        if not os.path.exists(checkpoint_path):
-            os.makedirs(ec.weight_path, exist_ok=True)
+        save_new_checkpoint = True
 
-            torch.save(
-                {"model_state_dict": ssl_model.state_dict(), "final_acc": acc, "config": tc},
-                checkpoint_path,
-            )
-        else:
-            existing_checkpoint = torch.load(checkpoint_path, map_location="cpu")
-            existing_accuracy = existing_checkpoint.get("final_acc", 0.0)
+        if os.path.exists(checkpoint_path):
+            prev_checkpoint = torch.load(checkpoint_path, map_location="cpu",weights_only=False)
+            prev_acc = prev_checkpoint.get("final_acc", 0)
 
+            print(acc, prev_acc)
+            if acc <= prev_acc:
+                save_new_checkpoint = False
+
+        if save_new_checkpoint:
             torch.save(
                 {"model_state_dict": ssl_model.state_dict(), "final_acc": acc, "config": tc},
                 checkpoint_path,

@@ -75,18 +75,21 @@ def train_n_val(
         }
 
         # Evaluate every 2 epochs to save time
-        if (epoch + 1) % ec.eval_frequency == 0:
+        if (epoch + 1) % ec.eval_frequency == 0 or (epoch+1) == tc.epochs:
             accuracy = evaluate(ssl_model, train_loader, test_loader, device)
             epoch_metrics["epoch/knn_accuracy"] = accuracy
             print(
                 f"Epoch {epoch + 1}/{tc.epochs}, Avg Loss: {avg_loss:.4f}, LR: {current_lr:.6f}, KNN Accuracy: {accuracy:.4f}"
             )
+            if wandb_run:
+                wandb_run.log(epoch_metrics)
         else:
             print(f"Epoch {epoch + 1}/{tc.epochs}, Avg Loss: {avg_loss:.4f}, LR: {current_lr:.6f}")
 
     if wandb_run:
         wandb.finish()
 
+    return accuracy
 
 def evaluate(ssl_model: nn.Module, train_loader, test_loader, device="cpu"):
     ssl_model.eval()  # Set to evaluation mode
