@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torchvision as tv
-from ssl_cifar.config import TrainConfig
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2
+
+from ssl_cifar.config import TrainConfig
 
 CIFAR_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR_STD = (0.2023, 0.1994, 0.2010)

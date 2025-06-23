@@ -9,9 +9,7 @@ def get_resnet(model_name="resnet18"):
             3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
         )
 
-        layers = (
-            list(model.children())[:3] + list(model.children())[4:-1]
-        )  # Remove initial maxpool
+        layers = list(model.children())[:3] + list(model.children())[4:-1]  # Remove initial maxpool
 
         backbone = list(layers) + [nn.Flatten()]
         return nn.Sequential(*backbone)

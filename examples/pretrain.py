@@ -1,6 +1,7 @@
 import os
 
 import torch
+
 from ssl_cifar.config import get_exp_name, parse_args
 from ssl_cifar.data.transformations import get_ssl_augmentations
 from ssl_cifar.data.transformations.shared import get_dataloaders

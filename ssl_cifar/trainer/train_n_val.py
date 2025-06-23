@@ -2,6 +2,7 @@ from dataclasses import asdict
 
 import torch
 import torch.nn as nn
+
 import wandb
 from ssl_cifar.config import ExpConfig, TrainConfig
 from ssl_cifar.models.knn import KNNClassifier
@@ -22,6 +23,9 @@ def train_n_val(
     if ec.use_wandb:
         wandb_run = wandb.init(project=ec.project_name, config=asdict(tc))
 
+    if tc.use_mixed_precision:
+        scaler = torch.GradScaler()
+
     for epoch in range(tc.epochs):
         epoch_loss = 0.0
 
@@ -34,18 +38,33 @@ def train_n_val(
 
             optimizer.zero_grad()
 
-            z1, loss = ssl_model(x1, x2)
+            if tc.use_mixed_precision:
+                with torch.autocast(
+                    device_type=device.type,
+                    dtype=torch.float16 if device.type == "cuda" else torch.bfloat16,
+                ):
+                    z1, loss = ssl_model(x1, x2)
+                scaler.scale(loss).backward()
 
-            # z1 shape: [B,2048]
-            z_std = torch.std(z1, dim=0).mean()
+                scaler.unscale_(optimizer)
+                grads = [p.grad for p in ssl_model.parameters() if p.grad is not None]
+                grad_norm = torch.nn.utils.get_total_norm(grads)
+                z_std = torch.std(z1, dim=0).mean()
 
-            loss.backward()
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                z1, loss = ssl_model(x1, x2)
 
-            # Compute gradient norm before optimizer step
-            grads = [p.grad for p in ssl_model.parameters() if p.grad is not None]
-            grad_norm = torch.nn.utils.get_total_norm(grads)
+                # z1 shape: [B,2048]
+                z_std = torch.std(z1, dim=0).mean()
 
-            optimizer.step()
+                loss.backward()
+                # Compute gradient norm before optimizer step
+                grads = [p.grad for p in ssl_model.parameters() if p.grad is not None]
+                grad_norm = torch.nn.utils.get_total_norm(grads)
+
+                optimizer.step()
             scheduler.step()
 
             epoch_loss += loss.item()
@@ -75,7 +94,7 @@ def train_n_val(
         }
 
         # Evaluate every 2 epochs to save time
-        if (epoch + 1) % ec.eval_frequency == 0 or (epoch+1) == tc.epochs:
+        if (epoch + 1) % ec.eval_frequency == 0 or (epoch + 1) == tc.epochs:
             accuracy = evaluate(ssl_model, train_loader, test_loader, device)
             epoch_metrics["epoch/knn_accuracy"] = accuracy
             print(
@@ -91,12 +110,11 @@ def train_n_val(
 
     return accuracy
 
+
 def evaluate(ssl_model: nn.Module, train_loader, test_loader, device="cpu"):
     ssl_model.eval()  # Set to evaluation mode
     with torch.inference_mode():  # Disable gradient computation
-        knn = KNNClassifier(
-            backbone=ssl_model.backbone, device=device
-        )  # Pass the trained backbone
+        knn = KNNClassifier(backbone=ssl_model.backbone, device=device)  # Pass the trained backbone
         knn.fit(train_loader)
         _, accuracy = knn.predict(test_loader)
     ssl_model.train()  # Set back to training mode
