@@ -52,7 +52,7 @@ if __name__ == "__main__":
         save_new_checkpoint = True
 
         if os.path.exists(checkpoint_path):
-            prev_checkpoint = torch.load(checkpoint_path, map_location="cpu",weights_only=False)
+            prev_checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
             prev_acc = prev_checkpoint.get("final_acc", 0)
 
             print(acc, prev_acc)
