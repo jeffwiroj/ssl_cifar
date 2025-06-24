@@ -19,6 +19,24 @@ def train_n_val(
     ec: ExpConfig,
     device="cpu",
 ):
+    """
+    Trains a self-supervised learning model and evaluates its representations using a KNN classifier.
+
+    Args:
+        ssl_model: The self-supervised learning model (e.g., SimCLR, MoCo) with a backbone.
+        optimizer: The optimizer used for training the SSL model.
+        scheduler: The learning rate scheduler.
+        dataloader: DataLoader for the training data (typically augmented pairs).
+        train_loader: DataLoader for the training data to extract features for KNN.
+        test_loader: DataLoader for the test data to evaluate KNN accuracy.
+        tc: Training configuration.
+        ec: Experiment configuration.
+        device: The device to run training on ('cpu' or 'cuda').
+
+    Returns:
+        The final KNN accuracy on the test set.
+    """
+
     wandb_run = None
     if ec.use_wandb:
         wandb_run = wandb.init(project=ec.project_name, config=asdict(tc))
