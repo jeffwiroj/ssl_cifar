@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -34,10 +35,13 @@ class ExpConfig:
     weight_path: str = "checkpoints/"  # Directory to save model weights
     data_path: str = "data/"  # Path to dataset
 
+    # Resume training
+    resume_from_checkpoint: Optional[str] = None  # Path to checkpoint to resume from
+
     # Logging Configuration
     use_wandb: bool = True  # Whether to use Weights & Biases
     eval_frequency: int = 10  # How often to run KNN evaluation (every N epochs)
-    save_frequency: int = 20  # How often to save checkpoints (every N epochs)
+    save_frequency: int = 10  # How often to save checkpoints (every N epochs)
 
     # Debug & Monitoring
     verbose: bool = False  # Enable verbose output
@@ -117,7 +121,17 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
     train_opt_group.add_argument(
         "--mixed-precision",
         action="store_true",
-        help="Disable mixed precision training",
+        help="Enable mixed precision training",
+    )
+
+    # Resume Options
+    resume_group = parser.add_argument_group("Resume Training")
+    resume_group.add_argument(
+        "--resume-from-checkpoint",
+        "-r",
+        type=str,
+        default=None,
+        help="Path to checkpoint file to resume training from",
     )
 
     # Experiment Configuration
@@ -149,7 +163,7 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
     # Logging Configuration
     log_group = parser.add_argument_group("Logging Configuration")
     log_group.add_argument(
-        "--use-wandb", action="store_true", help="Disable Weights & Biases logging"
+        "--use-wandb", action="store_true", help="Enable Weights & Biases logging"
     )
     log_group.add_argument(
         "--eval-frequency",
@@ -179,8 +193,6 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
         lr=args.learning_rate,
         wd=args.wd,
         momentum=args.momentum,
-        # optimizer=args.optimizer, may add later
-        # scheduler=args.scheduler,
         eval_batch_size=args.eval_batch_size,
         use_mixed_precision=args.mixed_precision,
     )
@@ -189,6 +201,7 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
         project_name=args.project_name,
         weight_path=args.weight_path,
         data_path=args.data_path,
+        resume_from_checkpoint=args.resume_from_checkpoint,
         use_wandb=args.use_wandb,
         eval_frequency=args.eval_frequency,
         save_frequency=args.save_frequency,

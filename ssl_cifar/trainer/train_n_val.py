@@ -1,9 +1,11 @@
+import os
 from dataclasses import asdict
+from typing import Optional
 
 import torch
 import torch.nn as nn
-
 import wandb
+
 from ssl_cifar.config import ExpConfig, TrainConfig
 from ssl_cifar.models.knn import KNNClassifier
 
@@ -12,15 +14,18 @@ def train_n_val(
     ssl_model: torch.nn,
     optimizer,
     scheduler,
+    scaler,
     dataloader,
     train_loader,
     test_loader,
     tc: TrainConfig,
     ec: ExpConfig,
     device="cpu",
+    start_epoch: int = 0,
+    wandb_run_id=None,
 ):
     """
-    Trains a self-supervised learning model and evaluates its representations using a KNN classifier.
+    Trains a ssl model and evaluates its representations using a KNN classifier.
 
     Args:
         ssl_model: The self-supervised learning model (e.g., SimCLR, MoCo) with a backbone.
@@ -39,14 +44,17 @@ def train_n_val(
 
     wandb_run = None
     if ec.use_wandb:
-        wandb_run = wandb.init(project=ec.project_name, config=asdict(tc))
+        if wandb_run_id:
+            wandb_run = wandb.init(
+                project=ec.project_name, config=asdict(tc), id=wandb_run_id, resume="must"
+            )
+        else:
+            wandb_run = wandb.init(project=ec.project_name, config=asdict(tc))
+            wandb_run_id = wandb_run.id
 
-    if tc.use_mixed_precision:
-        scaler = torch.GradScaler()
-
-    for epoch in range(tc.epochs):
+    for epoch in range(start_epoch, tc.epochs):
         epoch_loss = 0.0
-
+        accuracy = None
         for batch_idx, data in enumerate(dataloader):
             x1, x2 = data[0]
             x1 = x1.to(device)
@@ -116,12 +124,28 @@ def train_n_val(
             accuracy = evaluate(ssl_model, train_loader, test_loader, device)
             epoch_metrics["epoch/knn_accuracy"] = accuracy
             print(
-                f"Epoch {epoch + 1}/{tc.epochs}, Avg Loss: {avg_loss:.4f}, LR: {current_lr:.6f}, KNN Accuracy: {accuracy:.4f}"
+                f"Epoch {epoch + 1}/{tc.epochs}, Avg Loss: {avg_loss:.4f}, "
+                f"LR: {current_lr:.6f}, KNN Accuracy: {accuracy:.4f}"
             )
             if wandb_run:
                 wandb_run.log(epoch_metrics)
         else:
             print(f"Epoch {epoch + 1}/{tc.epochs}, Avg Loss: {avg_loss:.4f}, LR: {current_lr:.6f}")
+
+        if ec.weight_path and (epoch + 1) % ec.save_frequency == 0:
+            if accuracy is None:
+                accuracy = evaluate(ssl_model, train_loader, test_loader, device)
+            save_checkpoint(
+                epoch=epoch,
+                ssl_model=ssl_model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                acc=accuracy,
+                wandb_run_id=wandb_run.id if wandb_run else None,
+                tc=tc,
+                ec=ec,
+            )
 
     if wandb_run:
         wandb.finish()
@@ -137,3 +161,35 @@ def evaluate(ssl_model: nn.Module, train_loader, test_loader, device="cpu"):
         _, accuracy = knn.predict(test_loader)
     ssl_model.train()  # Set back to training mode
     return accuracy
+
+
+def save_checkpoint(
+    epoch: int,
+    ssl_model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler,
+    scaler: Optional[torch.GradScaler],
+    acc: float,
+    wandb_run_id: Optional[str],
+    tc: TrainConfig,
+    ec: ExpConfig,
+) -> None:
+    checkpoint = {
+        "epoch": epoch,
+        "model_state_dict": ssl_model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict(),
+        "acc": acc,
+        "train_config": asdict(tc),
+        "exp_config": asdict(ec),
+        "wandb_run_id": wandb_run_id,
+    }
+
+    os.makedirs(ec.weight_path, exist_ok=True)
+
+    if scaler is not None:
+        checkpoint["scaler_state_dict"] = scaler.state_dict()
+
+    exp_name = f"{tc.ssl_model}_{tc.backbone}"
+    latest_path = os.path.join(ec.weight_path, f"{exp_name}_latest.pth")
+    torch.save(checkpoint, latest_path)
