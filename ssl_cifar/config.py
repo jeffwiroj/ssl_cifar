@@ -174,7 +174,7 @@ def parse_args() -> tuple[TrainConfig, ExpConfig]:
     log_group.add_argument(
         "--save-frequency",
         type=int,
-        default=20,
+        default=10,
         help="Save checkpoints every N epochs",
     )
 

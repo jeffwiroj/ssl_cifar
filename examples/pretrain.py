@@ -30,6 +30,7 @@ def load_configs_from_checkpoint(checkpoint_path: str) -> Tuple[TrainConfig, Exp
     # Create config objects from dictionaries
     train_config = TrainConfig(**train_config_dict)
     exp_config = ExpConfig(**exp_config_dict)
+    exp_config.resume_from_checkpoint = checkpoint_path
 
     print("Successfully loaded configs from checkpoint")
     print(f"SSL Model: {train_config.ssl_model}, Backbone: {train_config.backbone}")
@@ -142,7 +143,7 @@ if __name__ == "__main__":
         ec,
         device,
         start_epoch=start_epoch,
-        wandb_run_id=wandb_run_id
+        wandb_run_id=wandb_run_id,
     ).item()
 
     if ec.weight_path:
