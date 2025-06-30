@@ -1,12 +1,12 @@
 import os
 from dataclasses import asdict
 from typing import Optional
+from omegaconf import OmegaConf
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 import wandb
-
-from ssl_cifar.config import ExpConfig, TrainConfig
 from ssl_cifar.models.knn import KNNClassifier
 
 
@@ -18,8 +18,8 @@ def train_n_val(
     dataloader,
     train_loader,
     test_loader,
-    tc: TrainConfig,
-    ec: ExpConfig,
+    tc,
+    ec,
     device="cpu",
     start_epoch: int = 0,
     wandb_run_id=None,
@@ -171,8 +171,8 @@ def save_checkpoint(
     scaler: Optional[torch.GradScaler],
     acc: float,
     wandb_run_id: Optional[str],
-    tc: TrainConfig,
-    ec: ExpConfig,
+    tc,
+    ec,
 ) -> None:
     checkpoint = {
         "epoch": epoch,
@@ -180,8 +180,8 @@ def save_checkpoint(
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_state_dict": scheduler.state_dict(),
         "acc": acc,
-        "train_config": asdict(tc),
-        "exp_config": asdict(ec),
+        "train_config": OmegaConf.to_container(tc, resolve=True),
+        "exp_config":OmegaConf.to_container(ec, resolve=True),
         "wandb_run_id": wandb_run_id,
     }
 
@@ -193,3 +193,68 @@ def save_checkpoint(
     exp_name = f"{tc.ssl_model}_{tc.backbone}"
     latest_path = os.path.join(ec.weight_path, f"{exp_name}_latest.pth")
     torch.save(checkpoint, latest_path)
+
+def load_checkpoint(
+    checkpoint_path: str,
+    ssl_model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    scheduler,
+    scaler: Optional[torch.cuda.amp.GradScaler],
+    device: str
+) -> Tuple[int, float, Optional[str], OmegaConf, OmegaConf]:
+    """
+    Loads model, optimizer, scheduler, and configs from a checkpoint file.
+
+    Args:
+        checkpoint_path (str): Path to the checkpoint file.
+        ssl_model (nn.Module): The model instance to load the state into.
+        optimizer (torch.optim.Optimizer): The optimizer instance.
+        scheduler: The learning rate scheduler instance.
+        scaler (Optional): The GradScaler instance for mixed precision.
+        device (str): The device to map the loaded tensors to ('cuda' or 'cpu').
+
+    Returns:
+        A tuple containing:
+        - start_epoch (int): The epoch to resume training from.
+        - best_acc (float): The accuracy from the checkpoint.
+        - wandb_run_id (Optional[str]): The wandb run ID for resuming logs.
+        - tc (OmegaConf): The loaded training configuration.
+        - ec (OmegaConf): The loaded experiment configuration.
+    """
+    if not os.path.exists(checkpoint_path):
+        raise FileNotFoundError(f"Checkpoint file not found at {checkpoint_path}")
+
+    # Load the checkpoint, mapping storage to the specified device
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    # Load states for model, optimizer, and scheduler
+    ssl_model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+    # Load scaler state if it exists in the checkpoint
+    if scaler is not None and "scaler_state_dict" in checkpoint:
+        scaler.load_state_dict(checkpoint["scaler_state_dict"])
+        print("Loaded GradScaler state.")
+
+    # Extract metadata
+    start_epoch = checkpoint["epoch"] + 1
+    best_acc = checkpoint.get("acc", 0.0) # Use .get for backward compatibility
+    wandb_run_id = checkpoint.get("wandb_run_id")
+
+    # --- Re-create OmegaConf objects from saved dictionaries ---
+    # This is the reverse of OmegaConf.to_container()
+    tc = OmegaConf.create(checkpoint["train_config"])
+    ec = OmegaConf.create(checkpoint["exp_config"])
+
+
+    print(f"Successfully loaded checkpoint from '{checkpoint_path}' at epoch {checkpoint['epoch']}")
+    
+    return {
+        "start_epoch": start_epoch,
+        "best_acc": best_acc,
+        "wandb_run_id": wandb_run_id,
+        "tc": tc,
+        "ec": ec,
+    }
+

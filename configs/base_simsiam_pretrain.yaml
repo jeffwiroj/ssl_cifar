@@ -1,0 +1,24 @@
+train:
+  backbone: resnet18
+  ssl_model: simsiam
+  epochs: 800 
+  lr:  0.06
+  wd: 5e-4
+  momentum: 0.9
+  lr_warmup: 0 
+  use_mixed_precision: true
+  batch_size: 512
+  eval_batch_size: 2048
+
+
+experiment:
+  project_name: cifar_ssl
+  weight_path: checkpoints/
+  data_path: "data/"
+  resume_from_checkpoint: null
+  use_wandb: false
+  eval_frequency: 10
+  save_frequency: 10
+  verbose: false
+
+

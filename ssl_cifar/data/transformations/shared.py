@@ -11,8 +11,6 @@ import torchvision as tv
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2
 
-from ssl_cifar.config import TrainConfig
-
 CIFAR_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR_STD = (0.2023, 0.1994, 0.2010)
 
@@ -81,7 +79,7 @@ class DoubleAugmentation:
         return [self.transform(img), self.transform(img)]
 
 
-def get_dataloaders(tc: TrainConfig, ssl_augmentation):
+def get_dataloaders(tc, ssl_augmentation):
     # OPTIMIZATION 1: Use more efficient data loading
     # Create evaluation datasets once
     train_set = tv.datasets.CIFAR10(
