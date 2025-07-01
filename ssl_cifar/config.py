@@ -1,6 +1,8 @@
 import argparse
-from omegaconf import OmegaConf
 import os
+
+from omegaconf import OmegaConf
+
 
 def get_args_from_yaml() -> OmegaConf:
     """
@@ -9,14 +11,9 @@ def get_args_from_yaml() -> OmegaConf:
     """
     # 1. Set up the argument parser
     # This parser is only responsible for finding the config file path.
-    parser = argparse.ArgumentParser(
-        description="Load configuration from a YAML file."
-    )
+    parser = argparse.ArgumentParser(description="Load configuration from a YAML file.")
     parser.add_argument(
-        '--path', '-p',
-        type=str,
-        required=True,
-        help="Path to the YAML configuration file."
+        "--path", "-p", type=str, required=True, help="Path to the YAML configuration file."
     )
 
     args = parser.parse_args()
@@ -36,6 +33,7 @@ def get_args_from_yaml() -> OmegaConf:
 
     return conf.train, conf.experiment
 
+
 def get_exp_name(train_config) -> str:
     """
     Generate experiment name based on SSL model and backbone architecture.
@@ -52,4 +50,3 @@ def get_exp_name(train_config) -> str:
         'simsiam_resnet18'
     """
     return f"{train_config.ssl_model}_{train_config.backbone}"
-

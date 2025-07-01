@@ -1,5 +1,4 @@
 import os
-from dataclasses import asdict
 from typing import Optional, Tuple
 
 import torch
@@ -46,10 +45,10 @@ def train_n_val(
     if ec.use_wandb:
         if wandb_run_id:
             wandb_run = wandb.init(
-                project=ec.project_name, config=asdict(tc), id=wandb_run_id, resume="must"
+                project=ec.project_name, config=tc, id=wandb_run_id, resume="must"
             )
         else:
-            wandb_run = wandb.init(project=ec.project_name, config=asdict(tc))
+            wandb_run = wandb.init(project=ec.project_name, config=tc)
             wandb_run_id = wandb_run.id
 
     for epoch in range(start_epoch, tc.epochs):
