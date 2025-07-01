@@ -1,18 +1,12 @@
 import os
-from typing import Any, Dict, Optional, Tuple
 
 import torch
-import torch.nn as nn
 
-from ssl_cifar.config import get_args_from_yaml,get_exp_name
+from ssl_cifar.config import get_args_from_yaml, get_exp_name
 from ssl_cifar.data.transformations import get_ssl_augmentations
 from ssl_cifar.data.transformations.shared import get_dataloaders
-from ssl_cifar.models.backbone import get_backbone
 from ssl_cifar.models.ssl_models import get_ssl_model
-from ssl_cifar.trainer.train_n_val import train_n_val,load_checkpoint
-
-
-
+from ssl_cifar.trainer.train_n_val import load_checkpoint, train_n_val
 
 if __name__ == "__main__":
     device = torch.device(
@@ -26,7 +20,7 @@ if __name__ == "__main__":
     start_epoch = 0
     wandb_run_id = None
 
-    tc,ec = get_args_from_yaml()
+    tc, ec = get_args_from_yaml()
 
     if ec.verbose:
         print(tc)
@@ -37,8 +31,7 @@ if __name__ == "__main__":
     dataloader, train_loader, test_loader = get_dataloaders(tc, ssl_augmentation)
 
     ### Init backbone and models
-    backbone = get_backbone(tc.backbone)
-    ssl_model = get_ssl_model(model_name=tc.ssl_model, backbone=backbone)
+    ssl_model = get_ssl_model(tc)
     ssl_model = ssl_model.to(device)
 
     if "cuda" in device.type:

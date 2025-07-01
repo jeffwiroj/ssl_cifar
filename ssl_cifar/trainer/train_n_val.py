@@ -1,12 +1,12 @@
 import os
 from dataclasses import asdict
-from typing import Optional
-from omegaconf import OmegaConf
 from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 import wandb
+from omegaconf import OmegaConf
+
 from ssl_cifar.models.knn import KNNClassifier
 
 
@@ -181,7 +181,7 @@ def save_checkpoint(
         "scheduler_state_dict": scheduler.state_dict(),
         "acc": acc,
         "train_config": OmegaConf.to_container(tc, resolve=True),
-        "exp_config":OmegaConf.to_container(ec, resolve=True),
+        "exp_config": OmegaConf.to_container(ec, resolve=True),
         "wandb_run_id": wandb_run_id,
     }
 
@@ -194,13 +194,14 @@ def save_checkpoint(
     latest_path = os.path.join(ec.weight_path, f"{exp_name}_latest.pth")
     torch.save(checkpoint, latest_path)
 
+
 def load_checkpoint(
     checkpoint_path: str,
     ssl_model: nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler,
     scaler: Optional[torch.cuda.amp.GradScaler],
-    device: str
+    device: str,
 ) -> Tuple[int, float, Optional[str], OmegaConf, OmegaConf]:
     """
     Loads model, optimizer, scheduler, and configs from a checkpoint file.
@@ -239,7 +240,7 @@ def load_checkpoint(
 
     # Extract metadata
     start_epoch = checkpoint["epoch"] + 1
-    best_acc = checkpoint.get("acc", 0.0) # Use .get for backward compatibility
+    best_acc = checkpoint.get("acc", 0.0)  # Use .get for backward compatibility
     wandb_run_id = checkpoint.get("wandb_run_id")
 
     # --- Re-create OmegaConf objects from saved dictionaries ---
@@ -247,9 +248,8 @@ def load_checkpoint(
     tc = OmegaConf.create(checkpoint["train_config"])
     ec = OmegaConf.create(checkpoint["exp_config"])
 
-
     print(f"Successfully loaded checkpoint from '{checkpoint_path}' at epoch {checkpoint['epoch']}")
-    
+
     return {
         "start_epoch": start_epoch,
         "best_acc": best_acc,
@@ -257,4 +257,3 @@ def load_checkpoint(
         "tc": tc,
         "ec": ec,
     }
-

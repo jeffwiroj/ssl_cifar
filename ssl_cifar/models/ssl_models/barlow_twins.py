@@ -3,18 +3,18 @@ import torch.nn as nn
 
 
 class BarlowTwins(nn.Module):
-    def __init__(self, backbone, lambd):
+    def __init__(self, backbone, lambd, hid_dim=8192, out_dim=512):
         super().__init__()
         self.lambd = lambd
         self.backbone = backbone
         self.proj_mlp = nn.Sequential(
-            nn.Linear(512, 8192, bias=False),
-            nn.BatchNorm1d(8192),
+            nn.Linear(512, hid_dim, bias=False),
+            nn.BatchNorm1d(hid_dim),
             nn.ReLU(),
-            nn.Linear(8192, 8192, bias=False),
-            nn.BatchNorm1d(8192),
+            nn.Linear(hid_dim, hid_dim, bias=False),
+            nn.BatchNorm1d(hid_dim),
             nn.ReLU(),
-            nn.Linear(8192, 8192, bias=False),
+            nn.Linear(hid_dim, out_dim, bias=False),
         )
 
     def forward(self, x1, x2):
