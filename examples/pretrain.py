@@ -2,12 +2,12 @@ import os
 
 import torch
 
+from ssl_cifar.trainer.scheduler import get_cosine_schedule_with_warmup
 from ssl_cifar.config import get_args_from_yaml, get_exp_name
 from ssl_cifar.data.transformations import get_ssl_augmentations
 from ssl_cifar.data.transformations.shared import get_dataloaders
 from ssl_cifar.models.ssl_models import get_ssl_model
 from ssl_cifar.trainer.train_n_val import load_checkpoint, train_n_val
-
 if __name__ == "__main__":
     device = torch.device(
         "cuda"
@@ -40,11 +40,12 @@ if __name__ == "__main__":
     optimizer = torch.optim.SGD(
         params=ssl_model.parameters(), lr=tc.lr, weight_decay=tc.wd, momentum=0.9
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer=optimizer, T_max=len(dataloader) * tc.epochs
-    )
 
-    scaler = torch.GradScaler() if tc.use_mixed_precision else None
+    total_steps = len(dataloader)*tc.epochs
+    num_warmup = tc.num_warmup if "num_warmup" in tc else 0 
+    scheduler = get_cosine_schedule_with_warmup(optimizer=optimizer,num_warmup_steps=0,num_training_steps=total_steps)
+
+    scaler = torch.GradScaler() if tc.use_mixed_precision and torch.cuda.is_available() else None
 
     # Load checkpoint if resuming
     if ec.resume_from_checkpoint:

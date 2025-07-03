@@ -101,7 +101,7 @@ def get_dataloaders(tc, ssl_augmentation):
         root="data/", train=True, download=True, transform=ssl_augmentation
     )
 
-    num_workers = min(8, os.cpu_count())
+    num_workers = min(8, os.cpu_count()//2)
 
     dataloader = DataLoader(
         unlabelled_set,

@@ -74,6 +74,9 @@ def train_n_val(
                 scaler.unscale_(optimizer)
                 grads = [p.grad for p in ssl_model.parameters() if p.grad is not None]
                 grad_norm = torch.nn.utils.get_total_norm(grads)
+                if "max_norm" in tc:
+                    torch.nn.utils.clip_grad_norm_(ssl_model.parameters(), tc.max_norm)
+
                 z_std = torch.std(z1, dim=0).mean()
 
                 scaler.step(optimizer)
@@ -88,7 +91,8 @@ def train_n_val(
                 # Compute gradient norm before optimizer step
                 grads = [p.grad for p in ssl_model.parameters() if p.grad is not None]
                 grad_norm = torch.nn.utils.get_total_norm(grads)
-
+                if "max_norm" in tc:
+                    torch.nn.utils.clip_grad_norm_(ssl_model.parameters(), tc.max_norm)
                 optimizer.step()
             scheduler.step()
 
