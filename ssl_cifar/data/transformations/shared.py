@@ -79,7 +79,7 @@ class DoubleAugmentation:
         return [self.transform(img), self.transform(img)]
 
 
-def get_dataloaders(tc, ssl_augmentation):
+def get_dataloaders(tc, ssl_augmentation,supervised_only=False):
     # OPTIMIZATION 1: Use more efficient data loading
     # Create evaluation datasets once
     train_set = tv.datasets.CIFAR10(
@@ -95,6 +95,9 @@ def get_dataloaders(tc, ssl_augmentation):
     test_loader = DataLoader(
         test_set, batch_size=tc.eval_batch_size, shuffle=False, drop_last=False, pin_memory=True
     )
+
+    if supervised_only:
+        return train_loader,test_loader
 
     # Pretraining data
     unlabelled_set = tv.datasets.CIFAR10(

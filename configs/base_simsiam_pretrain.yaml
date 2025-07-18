@@ -16,7 +16,7 @@ experiment:
   weight_path: checkpoints/
   data_path: "data/"
   resume_from_checkpoint: null
-  use_wandb: false
+  use_wandb: true
   eval_frequency: 10
   save_frequency: 10
   verbose: false
