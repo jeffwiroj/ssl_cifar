@@ -2,12 +2,12 @@ import torch.nn as nn
 
 
 class SimSiam(nn.Module):
-    def __init__(self, backbone):
+    def __init__(self, backbone,backbone_dim=512):
         super().__init__()
         self.criterion = nn.CosineSimilarity()
         self.backbone = backbone
         self.proj_mlp = nn.Sequential(
-            nn.Linear(512, 2048, bias=False),
+            nn.Linear(backbone_dim, 2048, bias=False),
             nn.BatchNorm1d(2048),
             nn.ReLU(),
             nn.Linear(2048, 2048, bias=False),
