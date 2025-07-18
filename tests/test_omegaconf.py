@@ -26,7 +26,7 @@ def test_base_simsiam_pretrain_config():
     assert conf.experiment.weight_path == "checkpoints/"
     assert conf.experiment.data_path == "data/"
     assert conf.experiment.resume_from_checkpoint is None
-    assert conf.experiment.use_wandb is False
+    assert conf.experiment.use_wandb is True
     assert conf.experiment.eval_frequency == 10
     assert conf.experiment.save_frequency == 10
     assert conf.experiment.verbose is False

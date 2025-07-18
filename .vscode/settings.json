@@ -1,6 +1,7 @@
 {
     // Python settings
     "python.envFile": "${workspaceFolder}/.env",
+    "python.defaultInterpreterPath": ".venv/bin/python",
     // Ruff formatting and linting
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
@@ -9,5 +10,4 @@
     // Disable other linters to avoid conflicts
     "python.linting.enabled": false,
     "python.testing.pytestEnabled": true,
-    "python.testing.cwd": "${workspaceFolder}/tests"
 }
