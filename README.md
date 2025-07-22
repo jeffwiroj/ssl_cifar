@@ -93,4 +93,13 @@ experiment:
 - **Experiment Tracking**: Weights & Biases integration
 
 ## 📊 Results
+### CIFAR-10 Performance
+
+- We report the final epoch KNN and Linear Eval Accuracy
+- We pre-train all models for 800 epochs and finetune the linear layer for 100 epochs.
+
+| Backbone | SSL Method | KNN (k=50) Accuracy % | Linear Eval Accuracy %|
+|----------|------------|--------------------|--------------------|
+| ResNet-18 | SimSiam | 90.59 | 91.6 |
+| MobileNetV4-Medium | SimSiam | - | - |
 

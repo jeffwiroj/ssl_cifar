@@ -1,0 +1,20 @@
+train:
+  backbone: resnet18
+  ssl_model: simsiam
+  backbone_dim: 512
+  epochs: 100
+  lr:  10
+  wd: 0
+  momentum: 0.9
+  lr_warmup: 0
+  batch_size: 128
+  eval_batch_size: 2048
+  
+
+experiment:
+  project_name: cifar_ssl_finetune
+  weight_path: checkpoints/finetune/
+  data_path: "data/"
+  ssl_weight_path: checkpoints/simsiam_resnet18_latest.pth
+  use_wandb: false
+  verbose: true
