@@ -8,7 +8,7 @@ This repo contains the implementations of Self-Supervised Learning (SSL) methods
 - **Flexible Backbones**: ResNet-18 and MobileNetV4-Medium support
 - **Modern Training**: Mixed precision training, learning rate warmup, and wandb logging
 - **Easy Configuration**: YAML-based configuration system for reproducible experiments
-- **Two-Stage Pipeline**: Separate pretraining and finetuning workflows
+- **Two-Stage Pipeline**: Separate pretraining and linear eval workflows
 
 ## 📁 Project Structure
 
@@ -17,10 +17,10 @@ ssl_cifar/
 ├── ssl_cifar/          # Main package
 ├── examples/           # Training scripts
 │   ├── pretrain.py    # Pretraining script
-│   └── finetune.py    # Finetuning script
+│   └── linear_eval.py    # Finetuning script
 └── configs/           # Configuration files
     ├── base_simsiam_pretrain.yaml
-    └── base_simsiam_finetune.yaml
+    └── base_simsiam_linear.yaml
 ```
 
 ## 🛠️ Installation
@@ -42,12 +42,12 @@ Train a SimSiam model on CIFAR-10:
 uv run examples/pretrain.py -p configs/base_simsiam_pretrain.yaml
 ```
 
-### Finetuning
+### Last Linear Layer finetuning
 
-After pretraining, finetune the learned representations:
+After pretraining, finetune the last linear layer:
 
 ```bash
-uv run examples/finetune.py -p configs/base_simsiam_finetune.yaml
+uv run examples/linear_eval.py -p configs/base_simsiam_linear.yaml
 ```
 
 ## ⚙️ Configuration
